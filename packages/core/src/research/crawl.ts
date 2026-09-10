@@ -170,12 +170,11 @@ export async function crawlCompanySite(
       const kind = url === start ? 'home' : classifyPage(url, title, text);
       pages.push({ url: res.finalUrl, title, text, score, kind });
 
-      if (pages.length === 1 || kind === 'home') {
-        for (const link of extractLinks(res.body, res.finalUrl)) {
-          const s = scoreLink(link.href, link.text);
-          if (s > 0 && !seen.has(link.href)) {
-            candidates.push({ url: link.href, score: s });
-          }
+      // Discover links from every fetched page so hiring info buried off-home is reachable.
+      for (const link of extractLinks(res.body, res.finalUrl)) {
+        const s = scoreLink(link.href, link.text);
+        if (s > 0 && !seen.has(link.href)) {
+          candidates.push({ url: link.href, score: s });
         }
       }
     } catch (err) {
