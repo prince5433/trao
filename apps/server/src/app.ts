@@ -7,14 +7,31 @@ import { login, logout, me, register } from './auth.js';
 import { config } from './config.js';
 import { kitsRouter } from './routes/kits.js';
 
+export function isAllowedCorsOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  const normalized = origin.replace(/\/$/, '');
+  if (config.clientOrigins.includes(normalized)) return true;
+  // Vercel production + preview URLs (e.g. project.vercel.app, project-git-branch-user.vercel.app)
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalized)) return true;
+  return false;
+}
+
 export function createApp(options?: { mongoUri?: string; useMemorySession?: boolean }) {
   const app = express();
   const mongoUri = options?.mongoUri ?? config.mongoUri;
   app.set('trust proxy', 1);
   app.use(
     cors({
-      origin: config.clientOrigin,
+      origin(origin, callback) {
+        if (isAllowedCorsOrigin(origin)) {
+          callback(null, origin ?? true);
+        } else {
+          callback(null, false);
+        }
+      },
       credentials: true,
+      methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     }),
   );
   app.use(express.json({ limit: '2mb' }));
@@ -23,6 +40,7 @@ export function createApp(options?: { mongoUri?: string; useMemorySession?: bool
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
+    proxy: config.isProd,
     cookie: {
       httpOnly: true,
       sameSite: config.isProd ? 'none' : 'lax',
