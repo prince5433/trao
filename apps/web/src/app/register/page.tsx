@@ -1,0 +1,48 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { AuthShell, Field, useAuthForm } from '@/components/AuthForm';
+
+export default function RegisterPage() {
+  const router = useRouter();
+  const form = useAuthForm(async (email, password) => {
+    await api('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    router.push('/dashboard');
+  });
+
+  return (
+    <AuthShell
+      title="Create account"
+      subtitle="Secure session auth. No email verification required."
+    >
+      <form onSubmit={form.onSubmit} className="space-y-4">
+        <Field label="Email" type="email" value={form.email} onChange={form.setEmail} required />
+        <Field
+          label="Password (min 8)"
+          type="password"
+          value={form.password}
+          onChange={form.setPassword}
+          required
+        />
+        {form.error && <p className="text-sm text-ember">{form.error}</p>}
+        <button
+          type="submit"
+          disabled={form.loading}
+          className="w-full rounded-full bg-moss py-3 font-semibold text-white disabled:opacity-60"
+        >
+          {form.loading ? 'Creating…' : 'Register'}
+        </button>
+      </form>
+      <p className="mt-4 text-sm text-ink/70">
+        Already registered?{' '}
+        <a className="text-moss underline" href="/login">
+          Log in
+        </a>
+      </p>
+    </AuthShell>
+  );
+}

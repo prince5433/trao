@@ -1,0 +1,14 @@
+[
+  {
+    "id": "case-01",
+    "jd": "Senior Backend Engineer\n\nRequired:\n- 5+ years with Node.js and TypeScript\n- Experience designing REST APIs\n- Mentoring junior engineers\n\nNice to have:\n- GraphQL\n- Kafka experience\n\nYou will own services end to end and collaborate with product.",
+    "company_url": "https://example.com",
+    "days": 5
+  },
+  {
+    "id": "case-02",
+    "jd": "Frontend Engineer. React.",
+    "company_url": "https://example.com",
+    "days": 1
+  }
+]

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: prep-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install && npm run build -w @prep/core && npm run build -w @prep/server
+    startCommand: npm run start -w @prep/server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: llama-3.1-8b-instant
+      - key: ALLOW_LOCALHOST_FETCH
+        value: "false"
+      - key: COVERAGE_MAX_PASSES
+        value: "3"

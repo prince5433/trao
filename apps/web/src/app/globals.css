@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0f1c18;
+  --moss: #1f4d3a;
+  --leaf: #3d8b6e;
+  --mist: #e8f2ec;
+  --sand: #f7f3eb;
+  --ember: #c45c26;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-sand text-ink font-sans antialiased;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(61, 139, 110, 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(196, 92, 38, 0.12), transparent),
+    linear-gradient(180deg, #f7f3eb 0%, #eef6f1 100%);
+}
+
+*:focus-visible {
+  @apply outline outline-2 outline-offset-2 outline-leaf;
+}
+
+.prose-kit h2 {
+  @apply font-display text-2xl text-moss mb-2;
+}
