@@ -61,30 +61,42 @@ export function heuristicExtract(jd: string): {
   const reqs: Array<{ text: string; kind: RequirementKind; priority: RequirementPriority }> = [];
   const responsibilities: string[] = [];
 
+  const NICE_SECTION = /^(nice to have|preferred|bonus|plus)\s*:?\s*/i;
+  const MUST_SECTION =
+    /^(requirements?|qualifications?|must[- ]haves?|required|what you.?ll need|you (must|need))\s*:?\s*/i;
+  const RESP_SECTION = /^(responsibilities|what you.?ll do|you will)\s*:?\s*/i;
+
   let section: 'requirements' | 'nice' | 'responsibilities' = 'requirements';
   for (const line of lines) {
-    if (/nice to have|preferred|bonus|plus\b/i.test(line) && line.length < 80) {
+    let textLine = line;
+
+    if (NICE_SECTION.test(line) && line.length < 120) {
       section = 'nice';
-      continue;
-    }
-    if (
-      /^(requirements?|qualifications?|must[- ]haves?|what you.?ll need|you (must|need))\b/i.test(
-        line,
-      ) &&
-      line.length < 80
-    ) {
+      const rest = line.replace(NICE_SECTION, '').trim();
+      if (rest.length < 3) continue;
+      textLine = rest;
+    } else if (MUST_SECTION.test(line) && line.length < 120) {
       section = 'requirements';
-      continue;
-    }
-    if (/^(responsibilities|what you.?ll do|you will)\b/i.test(line) && line.length < 80) {
+      const rest = line.replace(MUST_SECTION, '').trim();
+      if (rest.length < 3) continue;
+      textLine = rest;
+    } else if (RESP_SECTION.test(line) && line.length < 120) {
       section = 'responsibilities';
-      continue;
+      const rest = line.replace(RESP_SECTION, '').trim();
+      if (rest.length < 3) continue;
+      textLine = rest;
     }
 
-    const isBullet = /^[-*•]/.test(line) || /^\d+\./.test(line);
-    if (!isBullet && bulletLines.length > 0) continue;
+    const isBullet = /^[-*•]/.test(textLine) || /^\d+\./.test(textLine);
+    const looksLikeRequirement =
+      isBullet ||
+      MUST_HINTS.test(textLine) ||
+      NICE_HINTS.test(textLine) ||
+      /\d+\+?\s*years?|\bexperience with\b|\bproficien/i.test(textLine);
+    if (!looksLikeRequirement && bulletLines.length > 0) continue;
+    if (!looksLikeRequirement && textLine === title) continue;
 
-    const text = line.replace(/^[-*•\d.]+\s*/, '').trim();
+    const text = textLine.replace(/^[-*•\d.]+\s*/, '').trim();
     if (text.length < 3) continue;
 
     if (section === 'responsibilities') {

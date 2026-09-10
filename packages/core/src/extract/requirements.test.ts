@@ -17,6 +17,20 @@ describe('requirement priority heuristics', () => {
     expect(result.title.length).toBeGreaterThan(0);
   });
 
+  it('extracts requirements from paragraph prose when bullets are mixed in', () => {
+    const result = heuristicExtract(`Senior Backend Engineer
+
+We need someone with 5+ years of Node.js experience who can mentor junior engineers.
+
+Required: strong communication skills.
+
+Nice to have: GraphQL experience is a bonus.
+`);
+    expect(result.requirements.some((r) => /Node/i.test(r.text) && r.priority === 'must')).toBe(true);
+    expect(result.requirements.some((r) => /mentor/i.test(r.text))).toBe(true);
+    expect(result.requirements.some((r) => /GraphQL/i.test(r.text) && r.priority === 'nice')).toBe(true);
+  });
+
   it('keeps section-scoped must vs nice from JD structure', () => {
     const result = heuristicExtract(`Senior Backend Engineer
 
