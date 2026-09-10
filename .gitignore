@@ -3,7 +3,9 @@ dist/
 **/dist/
 .next/
 build/
-coverage/
+/coverage/
+apps/*/coverage/
+packages/*/coverage/
 .env
 .env.local
 *.log
