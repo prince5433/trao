@@ -1,8 +1,19 @@
+import { allocateSchedule, assertValidKit, markEdited, markManual, type PrepKit } from '@prep/core';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
+import { z } from 'zod';
+import { requireAuth, type AuthedRequest } from '../auth.js';
+import { config } from '../config.js';
+import { Kit } from '../models.js';
+import type {
+  ProgressEvent,
+  PipelineWarning,
+  ProgressStep,
+  QuestionCategory,
+} from '@prep/core';
 import {
   fingerprintInput,
   initialItemMeta,
-  markEdited,
-  markManual,
   regenerateBrief,
   regenerateCategory,
   regenerateSchedule,
@@ -10,18 +21,7 @@ import {
   createLlmClient,
   buildWeakSpotsReport,
   orderFlashcardsForPractice,
-  assertValidKit,
-  type PrepKit,
-  type ProgressStep,
-  type QuestionCategory,
 } from '@prep/core';
-import type { Request, Response } from 'express';
-import { Router } from 'express';
-import { z } from 'zod';
-import { requireAuth, type AuthedRequest } from '../auth.js';
-import { config } from '../config.js';
-import { Kit } from '../models.js';
-import type { ProgressEvent, PipelineWarning } from '@prep/core';
 
 function userIdOf(req: Request): string {
   return (req as unknown as AuthedRequest).userId;
@@ -111,7 +111,16 @@ async function runGeneration(kitId: string, userId: string) {
     kit.content = result.kit;
     kit.itemMeta = initialItemMeta(result.kit);
     kit.warnings = result.warnings;
-    kit.researchMeta = result.research;
+    kit.researchMeta = {
+      ...result.research,
+      pages: result.kit.source.pages_used.map((url) => ({
+        url,
+        title: '',
+        text: `${result.kit.company_brief.summary}\n${result.kit.company_brief.what_they_do}`,
+        score: 1,
+        kind: 'other',
+      })),
+    };
     kit.status = partial ? 'partial' : 'ready';
     kit.generationLock = false;
     kit.progress = {
@@ -289,7 +298,29 @@ kitsRouter.patch('/:id', async (req, res) => {
 
   let validated: PrepKit;
   try {
-    validated = assertValidKit(body.content);
+    // Heal schedule if edits removed question ids
+    const qIds = new Set(body.content.questions.map((q) => q.id));
+    const healedDays = body.content.schedule.days.map((d) => ({
+      ...d,
+      question_ids: d.question_ids.filter((id) => qIds.has(id)),
+      minutes: Number.isInteger(d.minutes) ? d.minutes : Math.round(d.minutes),
+    }));
+    const candidate = {
+      ...body.content,
+      schedule: {
+        ...body.content.schedule,
+        days: healedDays,
+      },
+    };
+    // If day count drifted, rebuild deterministically
+    if (candidate.schedule.days.length !== candidate.schedule.days_available) {
+      candidate.schedule = allocateSchedule(
+        candidate.questions,
+        candidate.role.requirements,
+        candidate.schedule.days_available,
+      );
+    }
+    validated = assertValidKit(candidate);
   } catch (err) {
     return res.status(400).json({
       error: { code: 'INVALID_KIT', message: err instanceof Error ? err.message : String(err) },
@@ -333,8 +364,8 @@ kitsRouter.post('/:id/regenerate', async (req, res) => {
         kit.content,
         kit.itemMeta ?? {},
         llm,
-        (kit.researchMeta as { pages?: unknown })?.pages
-          ? []
+        Array.isArray((kit.researchMeta as { pages?: unknown })?.pages)
+          ? ((kit.researchMeta as { pages: Array<{ url: string; title: string; text: string; score: number; kind: 'home' | 'hiring' | 'about' | 'other' }> }).pages)
           : (kit.content.source.pages_used || []).map((url: string) => ({
               url,
               title: '',

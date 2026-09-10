@@ -45,7 +45,7 @@ export function heuristicExtract(jd: string): {
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean);
-  const thin = jd.trim().length < 280 || lines.length <= 3;
+  const thin = lines.length <= 3 && jd.trim().length < 280;
 
   const title = lines[0]?.slice(0, 120) || 'Role';
   let seniority = '';
@@ -59,28 +59,41 @@ export function heuristicExtract(jd: string): {
 
   const bulletLines = lines.filter((l) => /^[-*•]/.test(l) || /^\d+\./.test(l));
   const reqs: Array<{ text: string; kind: RequirementKind; priority: RequirementPriority }> = [];
+  const responsibilities: string[] = [];
 
-  let section = 'requirements';
+  let section: 'requirements' | 'nice' | 'responsibilities' = 'requirements';
   for (const line of lines) {
-    if (/nice to have|preferred|bonus/i.test(line) && line.length < 60) {
+    if (/nice to have|preferred|bonus|plus\b/i.test(line) && line.length < 80) {
       section = 'nice';
       continue;
     }
-    if (/requirements?|qualifications?|you (must|need)|what you.?ll need/i.test(line) && line.length < 80) {
+    if (
+      /^(requirements?|qualifications?|must[- ]haves?|what you.?ll need|you (must|need))\b/i.test(
+        line,
+      ) &&
+      line.length < 80
+    ) {
       section = 'requirements';
       continue;
     }
-    if (/responsibilities|what you.?ll do|you will/i.test(line) && line.length < 80) {
+    if (/^(responsibilities|what you.?ll do|you will)\b/i.test(line) && line.length < 80) {
       section = 'responsibilities';
       continue;
     }
-  }
 
-  const candidates = bulletLines.length ? bulletLines : lines.slice(1);
-  for (const raw of candidates.slice(0, 20)) {
-    const text = raw.replace(/^[-*•\d.]+\s*/, '').trim();
-    if (text.length < 8) continue;
-    const priority = inferPriorityFromText(text, section);
+    const isBullet = /^[-*•]/.test(line) || /^\d+\./.test(line);
+    if (!isBullet && bulletLines.length > 0) continue;
+
+    const text = line.replace(/^[-*•\d.]+\s*/, '').trim();
+    if (text.length < 3) continue;
+
+    if (section === 'responsibilities') {
+      responsibilities.push(text);
+      continue;
+    }
+
+    const priority =
+      section === 'nice' ? 'nice' : inferPriorityFromText(text, section);
     let kind: RequirementKind = 'technical';
     if (/(mentor|lead|communicat|collaborat|stakeholder|team)/i.test(text)) kind = 'behavioural';
     else if (/(domain|fintech|healthcare|industry|regulated)/i.test(text)) kind = 'domain';
@@ -95,12 +108,22 @@ export function heuristicExtract(jd: string): {
     });
   }
 
-  const responsibilities = candidates
-    .filter((l) => /build|design|own|lead|develop|ship/i.test(l))
-    .slice(0, 8)
-    .map((l) => l.replace(/^[-*•\d.]+\s*/, ''));
+  if (responsibilities.length === 0) {
+    const fallback = (bulletLines.length ? bulletLines : lines.slice(1))
+      .filter((l) => /build|design|own|lead|develop|ship/i.test(l))
+      .slice(0, 8)
+      .map((l) => l.replace(/^[-*•\d.]+\s*/, ''));
+    responsibilities.push(...fallback);
+  }
 
-  return { title, seniority, location, responsibilities, requirements: reqs, thin };
+  return {
+    title,
+    seniority,
+    location,
+    responsibilities: responsibilities.slice(0, 12),
+    requirements: reqs.slice(0, 30),
+    thin,
+  };
 }
 
 export async function extractRequirements(

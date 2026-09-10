@@ -1,0 +1,14 @@
+[
+  {
+    "id": "case-unreachable",
+    "jd": "Backend engineer. Required: Go experience.",
+    "company_url": "http://127.0.0.1:1/",
+    "days": 3
+  },
+  {
+    "id": "case-thin",
+    "jd": "Engineer. Python.",
+    "company_url": "https://example.com",
+    "days": 2
+  }
+]

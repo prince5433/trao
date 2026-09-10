@@ -11,6 +11,7 @@ packages/*/coverage/
 *.log
 .DS_Store
 kits-output.json
+kits-edge-output.json
 tmp/
 .turbo/
 *.tsbuildinfo

@@ -82,33 +82,31 @@ export async function regenerateCategory(
   const merged = mergeCategoryQuestions(kit.questions, generated, category, itemMeta);
 
   let questions = merged.questions;
+  let nextMeta = merged.itemMeta;
   let coverage = checkCoverage(kit.role.requirements, questions);
   let passes = kit.coverage.passes;
   if (coverage.uncovered_must_ids.length) {
+    let maxNum = 0;
+    for (const q of questions) {
+      const m = /^q(\d+)$/.exec(q.id);
+      if (m) maxNum = Math.max(maxNum, Number(m[1]));
+    }
     const gaps = await generateGapQuestions(
       llm,
       kit.role.requirements.filter((r) => coverage.uncovered_must_ids.includes(r.id)),
       questions,
-      questions.length + 1,
+      maxNum + 1,
     );
-    const withGaps = mergeCategoryQuestions(
-      questions,
-      gaps,
-      category,
-      merged.itemMeta,
-    );
-    // gap questions may be other categories — append preserving meta
-    const existingIds = new Set(questions.map((q) => q.id));
     for (const g of gaps) {
-      if (existingIds.has(g.id)) continue;
-      questions.push(g);
-      merged.itemMeta[g.id] = {
+      maxNum += 1;
+      const id = `q${maxNum}`;
+      questions.push({ ...g, id });
+      nextMeta[id] = {
         origin: 'generated',
         pinned: false,
         updatedAt: new Date().toISOString(),
       };
     }
-    questions = [...questions];
     coverage = checkCoverage(kit.role.requirements, questions);
     passes += 1;
   }
@@ -129,7 +127,7 @@ export async function regenerateCategory(
     },
   });
 
-  return { kit: next, itemMeta: merged.itemMeta };
+  return { kit: next, itemMeta: nextMeta };
 }
 
 export async function regenerateBrief(

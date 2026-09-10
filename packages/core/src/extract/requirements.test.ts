@@ -16,6 +16,25 @@ describe('requirement priority heuristics', () => {
     expect(result.thin).toBe(true);
     expect(result.title.length).toBeGreaterThan(0);
   });
+
+  it('keeps section-scoped must vs nice from JD structure', () => {
+    const result = heuristicExtract(`Senior Backend Engineer
+
+Required:
+- 5+ years with Node.js
+- Mentoring junior engineers
+
+Nice to have:
+- GraphQL
+- Kafka experience
+`);
+    expect(result.requirements.some((r) => r.priority === 'must' && /Node/i.test(r.text))).toBe(
+      true,
+    );
+    expect(result.requirements.some((r) => r.priority === 'nice' && /GraphQL/i.test(r.text))).toBe(
+      true,
+    );
+  });
 });
 
 describe('link ranking', () => {

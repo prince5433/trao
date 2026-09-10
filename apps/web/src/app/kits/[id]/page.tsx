@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import type { PrepKit, QuestionCategory } from '@prep/core/browser';
 import { PROGRESS_STEPS } from '@prep/core/browser';
-import { API_URL, api, type KitRecord } from '@/lib/api';
+import { api, type KitRecord } from '@/lib/api';
 
 const STEP_LABELS: Record<string, string> = {
   validating_jd: 'Validating job description',
@@ -36,6 +36,7 @@ export default function KitPage() {
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState('');
   const [editedIds, setEditedIds] = useState<Set<string>>(new Set());
+  const [manualIds, setManualIds] = useState<Set<string>>(new Set());
   const [regenBusy, setRegenBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -50,19 +51,18 @@ export default function KitPage() {
 
   useEffect(() => {
     if (!kit || (kit.status !== 'generating' && kit.status !== 'pending')) return;
-    const es = new EventSource(`${API_URL}/api/kits/${id}/events`, { withCredentials: true } as never);
-    // EventSource doesn't support credentials in all browsers the same way; fall back to polling.
-    es.close();
 
     const timer = setInterval(() => {
       load().catch(() => undefined);
     }, 1500);
     return () => clearInterval(timer);
-  }, [kit?.status, id, load]);
+  }, [kit, id, load]);
+
+  const kitStatus = kit?.status;
 
   // Debounced save
   useEffect(() => {
-    if (!local || !kit || kit.status === 'generating' || kit.status === 'pending') return;
+    if (!local || !kitStatus || kitStatus === 'generating' || kitStatus === 'pending') return;
     const handle = setTimeout(async () => {
       try {
         setSaveState('Saving…');
@@ -71,19 +71,21 @@ export default function KitPage() {
           body: JSON.stringify({
             content: local,
             editedIds: [...editedIds],
+            manualIds: [...manualIds],
           }),
         });
         setKit(data.kit);
         setEditedIds(new Set());
+        setManualIds(new Set());
         setSaveState('Saved');
       } catch (err) {
         setSaveState(err instanceof Error ? err.message : 'Save failed');
       }
     }, 700);
     return () => clearTimeout(handle);
-  }, [local, editedIds, id, kit?.status]);
+  }, [local, editedIds, manualIds, id, kitStatus]);
 
-  const generating = kit?.status === 'generating' || kit?.status === 'pending';
+  const generating = kitStatus === 'generating' || kitStatus === 'pending';
 
   async function regenerate(section: 'company_brief' | 'questions' | 'schedule', category?: QuestionCategory) {
     setRegenBusy(true);
@@ -104,6 +106,10 @@ export default function KitPage() {
 
   function markEdited(itemId: string) {
     setEditedIds((prev) => new Set(prev).add(itemId));
+  }
+
+  function markManual(itemId: string) {
+    setManualIds((prev) => new Set(prev).add(itemId));
   }
 
   if (error && !kit) {
@@ -206,9 +212,12 @@ export default function KitPage() {
             <QuestionsEditor
               kit={local}
               busy={regenBusy}
-              onChange={(next, idEdited) => {
+              onChange={(next, idEdited, isManual) => {
                 setLocal(next);
-                if (idEdited) markEdited(idEdited);
+                if (idEdited) {
+                  if (isManual) markManual(idEdited);
+                  else markEdited(idEdited);
+                }
               }}
               onRegen={(category) => regenerate('questions', category)}
             />
@@ -216,9 +225,12 @@ export default function KitPage() {
           {tab === 'flashcards' && (
             <FlashcardsEditor
               kit={local}
-              onChange={(next, idEdited) => {
+              onChange={(next, idEdited, isManual) => {
                 setLocal(next);
-                if (idEdited) markEdited(idEdited);
+                if (idEdited) {
+                  if (isManual) markManual(idEdited);
+                  else markEdited(idEdited);
+                }
               }}
             />
           )}
@@ -388,7 +400,7 @@ function QuestionsEditor({
   busy,
 }: {
   kit: PrepKit;
-  onChange: (k: PrepKit, editedId?: string) => void;
+  onChange: (k: PrepKit, editedId?: string, isManual?: boolean) => void;
   onRegen: (c: QuestionCategory) => void;
   busy: boolean;
 }) {
@@ -431,6 +443,7 @@ function QuestionsEditor({
         ],
       },
       id,
+      true,
     );
   }
 
@@ -572,7 +585,7 @@ function FlashcardsEditor({
   onChange,
 }: {
   kit: PrepKit;
-  onChange: (k: PrepKit, editedId?: string) => void;
+  onChange: (k: PrepKit, editedId?: string, isManual?: boolean) => void;
 }) {
   return (
     <section className="rounded-3xl border border-moss/10 bg-white/80 p-6">
@@ -600,6 +613,7 @@ function FlashcardsEditor({
                 ],
               },
               id,
+              true,
             );
           }}
         >

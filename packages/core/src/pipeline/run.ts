@@ -80,6 +80,12 @@ export async function runPipeline(
   try {
     crawl = await crawlCompanySite(input.company_url.trim(), { allowLocalhost });
     warnings.push(...crawl.warnings);
+    if (crawl.pages.length === 0) {
+      throw new PipelineError(
+        'COMPANY_UNREACHABLE',
+        `Company site unreachable after retries (attempted: ${crawl.pages_attempted.join(', ') || input.company_url})`,
+      );
+    }
     await emit(onProgress, 'checking_company_site', 'completed', undefined, {
       pages: crawl.pages.length,
     });
