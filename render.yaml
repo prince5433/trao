@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     rootDir: .
-    buildCommand: npm install && npm run build -w @prep/core && npm run build -w @prep/server
+    buildCommand: npm install --include=dev && npm run build -w @prep/core && npm run build -w @prep/server
     startCommand: npm run start -w @prep/server
     envVars:
       - key: NODE_ENV
