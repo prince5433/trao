@@ -2,7 +2,7 @@ import { allocateSchedule, assertValidKit, markEdited, markManual, type PrepKit 
 import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth, type AuthedRequest } from '../auth.js';
+import { isValidObjectId, requireAuth, type AuthedRequest } from '../auth.js';
 import { config } from '../config.js';
 import { Kit } from '../models.js';
 import type {
@@ -248,16 +248,29 @@ kitsRouter.post('/batch', async (req, res) => {
   res.status(202).json({ kits: created });
 });
 
+function kitIdParam(req: Request, res: Response): string | null {
+  const id = req.params.id;
+  if (!isValidObjectId(id)) {
+    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
+    return null;
+  }
+  return id;
+}
+
 kitsRouter.get('/:id', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
   res.json({ kit: serializeKit(kit) });
 });
 
 kitsRouter.get('/:id/events', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -280,7 +293,9 @@ kitsRouter.get('/:id/events', async (req, res) => {
 
 kitsRouter.patch('/:id', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
   if (!kit.content) {
     return res.status(400).json({ error: { code: 'NOT_READY', message: 'Kit has no content yet' } });
@@ -339,7 +354,9 @@ kitsRouter.patch('/:id', async (req, res) => {
 
 kitsRouter.post('/:id/regenerate', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit?.content) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
   }
@@ -407,7 +424,9 @@ kitsRouter.post('/:id/regenerate', async (req, res) => {
 
 kitsRouter.get('/:id/practice', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit?.content) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
   }
@@ -422,7 +441,9 @@ kitsRouter.get('/:id/practice', async (req, res) => {
 
 kitsRouter.post('/:id/practice', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit?.content) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
   }
@@ -448,7 +469,9 @@ kitsRouter.post('/:id/practice', async (req, res) => {
 
 kitsRouter.get('/:id/weak-spots', async (req, res) => {
   const userId = userIdOf(req);
-  const kit = await Kit.findOne({ _id: req.params.id, userId });
+  const id = kitIdParam(req, res);
+  if (!id) return;
+  const kit = await Kit.findOne({ _id: id, userId });
   if (!kit?.content) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Kit not found' } });
   }

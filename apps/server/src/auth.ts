@@ -1,7 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import { User } from './models.js';
+
+export function isValidObjectId(id: string): boolean {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 declare module 'express-session' {
   interface SessionData {
