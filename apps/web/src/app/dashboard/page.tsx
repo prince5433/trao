@@ -7,15 +7,24 @@ import { api, type KitSummary } from '@/lib/api';
 export default function DashboardPage() {
   const router = useRouter();
   const [kits, setKits] = useState<KitSummary[] | null>(null);
+  const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'unauthenticated'>(
+    'checking',
+  );
   const [error, setError] = useState('');
 
   useEffect(() => {
     api<{ user: { email: string } }>('/api/auth/me')
-      .then(() => api<{ kits: KitSummary[] }>('/api/kits'))
+      .then(() => {
+        setAuthState('authenticated');
+        return api<{ kits: KitSummary[] }>('/api/kits');
+      })
       .then((data) => setKits(data.kits))
       .catch((err) => {
-        setError(err.message);
-        if (String(err.message).toLowerCase().includes('auth')) router.push('/login');
+        const message = err instanceof Error ? err.message : 'Request failed';
+        setError(message);
+        setAuthState((prev) => (prev === 'checking' ? 'unauthenticated' : prev));
+        const lower = message.toLowerCase();
+        if (lower.includes('auth') || lower.includes('log')) router.push('/login');
       });
   }, [router]);
 
@@ -24,11 +33,26 @@ export default function DashboardPage() {
     router.push('/login');
   }
 
-  if (error && !kits) {
+  if (authState === 'checking' || (authState === 'authenticated' && kits === null && !error)) {
+    return <p className="text-ink/60">Loading your kits…</p>;
+  }
+
+  if (authState === 'authenticated' && kits === null && error) {
+    return (
+      <EmptyState
+        title="Could not load kits"
+        body={error}
+        actionLabel="Try again"
+        href="/dashboard"
+      />
+    );
+  }
+
+  if (authState === 'unauthenticated') {
     return (
       <EmptyState
         title="Sign in required"
-        body={error}
+        body={error || 'Not logged in'}
         actionLabel="Go to login"
         href="/login"
       />

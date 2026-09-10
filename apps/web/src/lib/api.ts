@@ -1,11 +1,14 @@
 import type { PrepKit } from '@prep/core/browser';
+import { resolveApiBaseUrl } from './apiBaseUrl';
 
 /**
- * Use same-origin `/api/*` by default so session cookies work on Vercel.
- * next.config.js rewrites `/api` to the Render backend (API_PROXY_TARGET).
- * Set NEXT_PUBLIC_API_URL only to bypass the proxy (e.g. local debugging).
+ * Browser: always same-origin `/api/*` (proxied by Next.js to API_PROXY_TARGET).
+ * Server: optional NEXT_PUBLIC_API_URL for non-browser callers.
  */
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? '';
+const API_URL = resolveApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_URL,
+  typeof window === 'undefined' ? 'server' : 'browser',
+);
 
 export async function api<T>(
   path: string,

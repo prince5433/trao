@@ -10,7 +10,7 @@
     "dev": "concurrently -n server,web -c blue,green \"npm run dev -w @prep/server\" \"npm run dev -w @prep/web\"",
     "build": "npm run build -w @prep/core && npm run build -w @prep/server && npm run build -w @prep/web",
     "start": "npm run start -w @prep/server",
-    "test": "npm run test -w @prep/core && npm run test -w @prep/server",
+    "test": "npm run test -w @prep/core && npm run test -w @prep/server && npm run test -w @prep/web",
     "test:unit": "npm run test -w @prep/core",
     "lint": "npm run lint -w @prep/core && npm run lint -w @prep/server && npm run lint -w @prep/web",
     "typecheck": "npm run typecheck -w @prep/core && npm run typecheck -w @prep/server && npm run typecheck -w @prep/web",
