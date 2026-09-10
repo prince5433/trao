@@ -10,6 +10,7 @@ import {
 } from '../generate/content.js';
 import { createLlmClient, type LlmClient } from '../llm/client.js';
 import { assertValidKit } from '../kit/schema.js';
+import { sanitizeKitReferences } from '../kit/sanitize.js';
 import { crawlCompanySite } from '../research/crawl.js';
 import { searchInterviewDiscussion } from '../research/interviewSearch.js';
 import { allocateSchedule } from '../schedule/allocate.js';
@@ -233,7 +234,7 @@ export async function runPipeline(
   await emit(onProgress, 'allocating_schedule', 'completed');
 
   await emit(onProgress, 'validating_kit', 'started');
-  const kit = assertValidKit({
+  const sanitized = sanitizeKitReferences({
     source: {
       company: crawl.company_name_guess,
       company_url: input.company_url.trim(),
@@ -255,6 +256,15 @@ export async function runPipeline(
     schedule,
     coverage: {
       uncovered_requirement_ids: coverage.uncovered_must_ids,
+      passes,
+    },
+  });
+  // Re-check coverage on sanitized output so stripped invalid refs cannot mask gaps.
+  const finalCoverage = checkCoverage(sanitized.role.requirements, sanitized.questions);
+  const kit = assertValidKit({
+    ...sanitized,
+    coverage: {
+      uncovered_requirement_ids: finalCoverage.uncovered_must_ids,
       passes,
     },
   });

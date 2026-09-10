@@ -1,5 +1,6 @@
 export * from './types.js';
 export * from './kit/schema.js';
+export * from './kit/sanitize.js';
 export * from './coverage/check.js';
 export * from './schedule/allocate.js';
 export * from './fetch/safeFetch.js';
