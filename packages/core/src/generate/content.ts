@@ -228,14 +228,18 @@ Existing question prompts (avoid duplicates): ${JSON.stringify(existing.map((q) 
       ),
     });
     const parsed = schema.parse(raw);
-    return parsed.questions.map((q, i) => ({
-      id: `q${startId + i}`,
-      requirement_ids: q.requirement_ids.filter((id) => uncovered.some((u) => u.id === id)),
-      category: q.category,
-      prompt: q.prompt,
-      answer_outline: q.answer_outline,
-      difficulty: q.difficulty,
-    }));
+    return parsed.questions.map((q, i) => {
+      const validIds = q.requirement_ids.filter((id) => uncovered.some((u) => u.id === id));
+      const fallbackId = uncovered[i % uncovered.length]?.id ?? uncovered[0]?.id;
+      return {
+        id: `q${startId + i}`,
+        requirement_ids: validIds.length ? validIds : fallbackId ? [fallbackId] : [],
+        category: q.category,
+        prompt: q.prompt,
+        answer_outline: q.answer_outline,
+        difficulty: q.difficulty,
+      };
+    }).filter((q) => q.requirement_ids.length > 0);
   } catch {
     return uncovered.map((r, i) => ({
       id: `q${startId + i}`,
