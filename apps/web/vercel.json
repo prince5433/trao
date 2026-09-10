@@ -1,3 +1,8 @@
 {
-  "installCommand": "cd ../.. && npm install --include=dev && npm run build -w @prep/core"
+  "installCommand": "cd ../.. && npm install --include=dev && npm run build -w @prep/core",
+  "build": {
+    "env": {
+      "API_PROXY_TARGET": "https://prep-api-sshw.onrender.com"
+    }
+  }
 }

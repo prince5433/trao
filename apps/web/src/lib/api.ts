@@ -1,6 +1,11 @@
 import type { PrepKit } from '@prep/core/browser';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/**
+ * Use same-origin `/api/*` by default so session cookies work on Vercel.
+ * next.config.js rewrites `/api` to the Render backend (API_PROXY_TARGET).
+ * Set NEXT_PUBLIC_API_URL only to bypass the proxy (e.g. local debugging).
+ */
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? '';
 
 export async function api<T>(
   path: string,

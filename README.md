@@ -182,8 +182,9 @@ Target: five cases within fifteen minutes with serial LLM calls and backoff.
 
 1. Create MongoDB Atlas free cluster; set `MONGODB_URI`.  
 2. Deploy API (Render blueprint [`render.yaml`](render.yaml) or Railway): set `SESSION_SECRET`, `CLIENT_ORIGIN`, `LLM_*`, `ALLOW_LOCALHOST_FETCH=false`.  
-3. Deploy `apps/web` to Vercel; set `NEXT_PUBLIC_API_URL` to the public API URL.  
-4. Ensure API CORS `CLIENT_ORIGIN` matches the Vercel domain; cookies use `sameSite=none; secure` in production.
+3. Deploy `apps/web` to Vercel; set `API_PROXY_TARGET` to the public Render API URL (see `apps/web/vercel.json`).  
+4. Leave `NEXT_PUBLIC_API_URL` **empty** on Vercel so the browser uses same-origin `/api/*` (proxied by Next.js). Cross-origin cookies to Render are blocked by modern browsers.  
+5. Ensure API CORS `CLIENT_ORIGIN` matches the Vercel domain.
 
 ## Design decisions & trade-offs
 
