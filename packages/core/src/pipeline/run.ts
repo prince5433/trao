@@ -281,6 +281,13 @@ export async function runPipeline(
       interview_discussion_found: interview.found,
       pages_attempted: crawl.pages_attempted,
       pages_failed: crawl.pages_failed,
+      pages: crawl.pages.map((page) => ({
+        url: page.url,
+        title: page.title,
+        text: page.text,
+        score: page.score,
+        kind: page.kind,
+      })),
     },
   };
 }

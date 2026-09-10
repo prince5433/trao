@@ -5,6 +5,7 @@ export * from './coverage/check.js';
 export * from './schedule/allocate.js';
 export * from './fetch/safeFetch.js';
 export * from './research/crawl.js';
+export * from './research/extractText.js';
 export * from './research/interviewSearch.js';
 export * from './llm/client.js';
 export * from './extract/requirements.js';

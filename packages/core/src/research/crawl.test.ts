@@ -57,6 +57,39 @@ describe('crawlCompanySite', () => {
     });
   }, 30000);
 
+  it('extracts substantive homepage text without navigation chrome', async () => {
+    await withSite((req, res) => {
+      const url = req.url || '/';
+      if (url === '/robots.txt') {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('Allow: /');
+        return;
+      }
+      if (url === '/' || url === '') {
+        res.writeHead(200, { 'content-type': 'text/html' });
+        res.end(`<html><head><title>Acme</title></head><body>
+          <a class="skip-link">Skip to main content</a>
+          <nav><a>Products</a><a>Support</a><a>Deals</a></nav>
+          <main>
+            <h1>Acme</h1>
+            <p>Acme builds developer productivity tools for distributed engineering teams.</p>
+          </main>
+          <footer><a>Privacy</a><a>Terms</a></footer>
+        </body></html>`);
+        return;
+      }
+      res.writeHead(404);
+      res.end('nope');
+    }, async (baseUrl) => {
+      const result = await crawlCompanySite(baseUrl, { allowLocalhost: true, rateMs: 0, maxPages: 1 });
+      const home = result.pages[0];
+      expect(home.text).toContain('developer productivity tools');
+      expect(home.text).not.toMatch(/skip to main content/i);
+      expect(home.text).not.toContain('Deals');
+      expect(home.text).not.toContain('Privacy');
+    });
+  }, 20000);
+
   it('continues when a secondary page fails but home works', async () => {
     await withSite((req, res) => {
       const url = req.url || '/';

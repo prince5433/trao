@@ -143,6 +143,13 @@ export interface PipelineResult {
     interview_discussion_found: boolean;
     pages_attempted: string[];
     pages_failed: string[];
+    pages: Array<{
+      url: string;
+      title: string;
+      text: string;
+      score: number;
+      kind: 'home' | 'hiring' | 'about' | 'other';
+    }>;
   };
 }
 

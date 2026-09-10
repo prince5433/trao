@@ -8,6 +8,7 @@ import type {
   QuestionCategory,
 } from '../types.js';
 import type { PageContent } from '../research/crawl.js';
+import { buildFallbackBriefSnippet, sortPagesForBrief } from '../research/extractText.js';
 import type { InterviewResearch } from '../research/interviewSearch.js';
 
 const questionsSchema = z.object({
@@ -63,8 +64,9 @@ export async function generateCompanyBrief(
   companyName: string,
   interview: InterviewResearch,
 ): Promise<{ summary: string; what_they_do: string; sources: string[] }> {
-  const sources = pages.map((p) => p.url);
-  const corpus = pages
+  const orderedPages = sortPagesForBrief(pages);
+  const sources = orderedPages.map((p) => p.url);
+  const corpus = orderedPages
     .map((p) => `URL: ${p.url}\nTITLE: ${p.title}\n${p.text.slice(0, 4000)}`)
     .join('\n\n---\n\n');
 
@@ -101,12 +103,14 @@ Company name guess: ${companyName}`,
       sources,
     };
   } catch {
-    const snippet = pages[0]?.text.slice(0, 400) || '';
+    const snippet = buildFallbackBriefSnippet(orderedPages);
     return {
       summary: snippet
-        ? `${companyName}: ${snippet}`
-        : `Limited information retrieved for ${companyName}.`,
-      what_they_do: snippet || 'Not enough crawled content to describe what they do.',
+        ? `${companyName} — ${snippet}`
+        : `Limited public information was available for ${companyName} from the crawled pages.`,
+      what_they_do: snippet
+        ? snippet
+        : 'Not enough substantive content was extracted from the company site to describe what they do.',
       sources,
     };
   }

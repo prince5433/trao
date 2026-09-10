@@ -113,13 +113,7 @@ async function runGeneration(kitId: string, userId: string) {
     kit.warnings = result.warnings;
     kit.researchMeta = {
       ...result.research,
-      pages: result.kit.source.pages_used.map((url) => ({
-        url,
-        title: '',
-        text: `${result.kit.company_brief.summary}\n${result.kit.company_brief.what_they_do}`,
-        score: 1,
-        kind: 'other',
-      })),
+      pages: result.research.pages,
     };
     kit.status = partial ? 'partial' : 'ready';
     kit.generationLock = false;

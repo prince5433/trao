@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import robotsParser from 'robots-parser';
 import { normalizeUrl, safeFetch, withRetry } from '../fetch/safeFetch.js';
 import type { PipelineWarning } from '../types.js';
+import { extractPageText } from './extractText.js';
 
 type Robots = {
   isAllowed(url: string, ua?: string): boolean | undefined;
@@ -52,11 +53,7 @@ export interface CrawlResult {
 }
 
 function cleanText(html: string): { title: string; text: string } {
-  const $ = cheerio.load(html);
-  $('script, style, noscript, svg, iframe').remove();
-  const title = $('title').first().text().trim() || $('h1').first().text().trim() || '';
-  const text = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 20000);
-  return { title, text };
+  return extractPageText(html);
 }
 
 export function scoreLink(url: string, anchorText = ''): number {
