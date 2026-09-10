@@ -58,7 +58,8 @@ Web and CLI both call `runPipeline()` from `@prep/core`. There is no separate ba
 8. Flashcards  
 9. Deterministic coverage → gap questions → re-check (max 3 passes)  
 10. Deterministic schedule for exactly N days  
-11. Zod validate Appendix A → persist / write JSON  
+11. Sanitize invalid `requirement_ids` on questions/flashcards  
+12. Zod validate Appendix A → persist / write JSON  
 
 ## Research strategy
 
@@ -168,6 +169,7 @@ npm run typecheck
 npm run evaluate -- --input fixtures/sample-cases.json --output kits-output.json
 ```
 
+- Root script builds `@prep/core` first so a clean clone works without a prior `npm run build`  
 - Same `runPipeline` as the web app  
 - Continues after individual failures  
 - Appendix B output shape (`version`, `generated_at`, `kits[]` with `status` ok|failed)  

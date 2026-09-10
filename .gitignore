@@ -12,6 +12,9 @@ packages/*/coverage/
 .DS_Store
 kits-output.json
 kits-edge-output.json
+kits-rc-output.json
+kits-rc-mixed.json
+fixtures/rc-batch-runtime.json
 tmp/
 .turbo/
 *.tsbuildinfo
