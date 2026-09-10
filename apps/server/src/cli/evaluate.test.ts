@@ -38,4 +38,28 @@ describe('evaluate CLI', () => {
     const result = await runEvaluate(['--input', input, '--output', output]);
     expect(result.code).not.toBe(0);
   }, 30000);
+
+  it('isolates batch failures and preserves input ids', async () => {
+    const repoRoot = path.resolve(process.cwd(), '../..');
+    const input = path.join(repoRoot, 'fixtures/batch-mixed.json');
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'prep-eval-'));
+    const output = path.join(dir, 'mixed-out.json');
+    const result = await runEvaluate(['--input', input, '--output', output], {
+      ALLOW_LOCALHOST_FETCH: 'true',
+    });
+    expect(result.code).toBe(0);
+    const parsed = JSON.parse(await fs.readFile(output, 'utf8')) as {
+      version: string;
+      generated_at: string;
+      kits: Array<{ id: string; status: string; error?: { code: string } }>;
+    };
+    expect(parsed.version).toBe('1.0');
+    expect(parsed.generated_at).toBeTruthy();
+    expect(parsed.kits).toHaveLength(3);
+    const byId = new Map(parsed.kits.map((k) => [k.id, k]));
+    expect(byId.get('mix-ok')?.status).toBe('ok');
+    expect(byId.get('mix-fail')?.status).toBe('failed');
+    expect(byId.get('mix-fail')?.error?.code).toBeTruthy();
+    expect(byId.get('mix-thin')?.status).toBe('ok');
+  }, 300000);
 });

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "mix-ok",
+    "jd": "Senior Backend Engineer\n\nRequired:\n- 5+ years Node.js\n- Mentoring experience",
+    "company_url": "https://example.com",
+    "days": 2
+  },
+  {
+    "id": "mix-fail",
+    "jd": "Engineer role",
+    "company_url": "http://127.0.0.1:1/",
+    "days": 1
+  },
+  {
+    "id": "mix-thin",
+    "jd": "Dev. Go.",
+    "company_url": "https://example.com",
+    "days": 1
+  }
+]

@@ -14,7 +14,7 @@
     "test:unit": "npm run test -w @prep/core",
     "lint": "npm run lint -w @prep/core && npm run lint -w @prep/server && npm run lint -w @prep/web",
     "typecheck": "npm run typecheck -w @prep/core && npm run typecheck -w @prep/server && npm run typecheck -w @prep/web",
-    "evaluate": "tsx apps/server/src/cli/evaluate.ts"
+    "evaluate": "npm run build -w @prep/core && tsx apps/server/src/cli/evaluate.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
